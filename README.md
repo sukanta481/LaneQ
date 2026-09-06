@@ -35,6 +35,29 @@ npm test          # ETA engine unit tests
 npm run build     # production build
 ```
 
+## Verification status
+
+Passing, checked automatically:
+
+```bash
+npm test        # 16 ETA-engine tests
+npm run build   # typecheck + production build
+npx eslint .
+```
+
+The schema, RLS, per-day token allocation under concurrency, and the
+one-in-service-per-lane constraint were all verified against a real Postgres 16.
+
+Four checks need a live Supabase project and have **not** been run:
+
+1. Sign in at `/login` and land on `/board`.
+2. Create, rename and deactivate a lane; confirm it survives a reload.
+3. Open `/board` in two tabs; adding a walk-in in one updates the other within
+   two seconds. If this fails, check the table is in the `supabase_realtime`
+   publication — the migration adds it.
+4. Open a `/t/<token>` URL in a private window; position and wait must match
+   `/board` exactly.
+
 ## Layout
 
 ```
