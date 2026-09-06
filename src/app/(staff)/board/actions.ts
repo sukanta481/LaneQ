@@ -104,11 +104,24 @@ export async function startVisit(formData: FormData) {
   if (!id || !laneId) return
 
   const supabase = await createServerSupabase()
-  await supabase
+
+  // The lane may have been taken between this board rendering and the tap. The
+  // unique index is the real guard; this check keeps the common case from
+  // surfacing as a database error.
+  const { data: occupant } = await supabase
     .from('visits')
-    .update({ status: 'in_service', assigned_lane_id: laneId, started_at: new Date().toISOString() })
-    .eq('id', id)
-    .eq('status', 'waiting')
+    .select('id')
+    .eq('assigned_lane_id', laneId)
+    .eq('status', 'in_service')
+    .maybeSingle()
+
+  if (!occupant) {
+    await supabase
+      .from('visits')
+      .update({ status: 'in_service', assigned_lane_id: laneId, started_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('status', 'waiting')
+  }
 
   revalidatePath('/board')
 }

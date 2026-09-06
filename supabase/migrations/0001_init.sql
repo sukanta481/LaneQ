@@ -81,6 +81,12 @@ create table if not exists visits (
   constraint visits_token_unique_per_day unique (salon_id, service_date, token_number)
 );
 
+-- A lane serves one customer at a time. Without this, two receptionists can
+-- start two people onto the same lane in the same moment and the board, which
+-- shows one customer per lane, would simply stop rendering one of them.
+create unique index if not exists visits_one_in_service_per_lane
+  on visits (assigned_lane_id) where status = 'in_service';
+
 create index if not exists visits_salon_status_created_idx on visits (salon_id, status, created_at);
 create index if not exists visits_tracking_token_idx       on visits (tracking_token);
 create index if not exists visits_salon_service_date_idx   on visits (salon_id, service_date);

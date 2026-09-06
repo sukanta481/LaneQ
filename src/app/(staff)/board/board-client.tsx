@@ -34,11 +34,18 @@ export function BoardClient({
   // Seeded from the server's clock so the first paint matches, then ticks
   // locally so ETAs count down while nothing else changes.
   const [now, setNow] = useState(() => new Date(serverNow))
+  const [isLive, setIsLive] = useState(true)
 
+  // The tick recomputes ETAs locally so they count down while nothing changes.
+  // If the realtime socket is not up it also refetches, because a board that
+  // has quietly stopped receiving changes is worse than one that polls.
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), RECOMPUTE_MS)
+    const timer = setInterval(() => {
+      setNow(new Date())
+      if (!isLive) router.refresh()
+    }, RECOMPUTE_MS)
     return () => clearInterval(timer)
-  }, [])
+  }, [isLive, router])
 
   // Any change to this salon's visits refetches; the recompute is local.
   useEffect(() => {
@@ -50,9 +57,10 @@ export function BoardClient({
         { event: '*', schema: 'public', table: 'visits', filter: `salon_id=eq.${salonId}` },
         () => router.refresh(),
       )
-      .subscribe()
+      .subscribe((status) => setIsLive(status === 'SUBSCRIBED'))
 
     return () => {
+      setIsLive(false)
       void supabase.removeChannel(channel)
     }
   }, [salonId, router])
@@ -82,9 +90,14 @@ export function BoardClient({
   return (
     <main className="p-3 pb-28">
       <section aria-labelledby="pool-heading">
-        <h2 id="pool-heading" className="px-1 text-sm font-semibold text-slate-600">
-          Waiting — any {terminology.lane_singular.toLowerCase()} ({pooled.length})
-        </h2>
+        <div className="flex items-baseline justify-between px-1">
+          <h2 id="pool-heading" className="text-sm font-semibold text-slate-600">
+            Waiting — any {terminology.lane_singular.toLowerCase()} ({pooled.length})
+          </h2>
+          {isLive ? null : (
+            <span className="text-xs text-amber-700">Live updates off — refreshing every 30s</span>
+          )}
+        </div>
 
         {pooled.length === 0 ? (
           <p className="px-1 py-3 text-sm text-slate-400">Nobody waiting.</p>
