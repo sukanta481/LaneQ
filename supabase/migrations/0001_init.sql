@@ -101,9 +101,14 @@ create table if not exists visit_counters (
   primary key (salon_id, service_date)
 );
 
+-- SECURITY DEFINER so the counter can be written while visit_counters itself
+-- stays closed to every client. Without this the trigger would run as the
+-- signed-in user and RLS would block the very insert it exists to serve.
 create or replace function assign_visit_token()
 returns trigger
 language plpgsql
+security definer
+set search_path = public
 as $$
 declare
   v_tz   text;
@@ -146,6 +151,9 @@ set search_path = public
 as $$
   select salon_id from staff_users where auth_user_id = auth.uid() limit 1;
 $$;
+
+-- No policies: nothing reaches this table except the definer trigger above.
+alter table visit_counters enable row level security;
 
 alter table salons      enable row level security;
 alter table staff_users enable row level security;
