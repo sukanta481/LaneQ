@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { requirePublicEnv } from './lib/supabase/env'
 
 /**
  * Next 16 renamed middleware to proxy. Runs on the Node runtime; the edge
@@ -13,9 +14,11 @@ const PUBLIC_PREFIXES = ['/login', '/t/', '/api/hooks/']
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next({ request })
 
+  const { url: supabaseUrl, key: supabaseKey } = requirePublicEnv()
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {

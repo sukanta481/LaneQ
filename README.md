@@ -23,12 +23,32 @@ this app holds no Meta credentials.
 ```bash
 npm install
 cp .env.example .env.local     # fill in your Supabase project values
-npm run dev
+npm run dev                    # http://localhost:3000
 ```
 
-Apply `supabase/migrations/0001_init.sql` then `supabase/seed.sql` to your
-Supabase project. The seed creates a demo salon with four chairs, six services,
-and a login of `owner@demo.test` / `password123`.
+Next.js serves this itself on port 3000. It does not run under Apache, so the
+folder it lives in is only a location — `localhost/LaneQ` will not serve it.
+
+Then, in the Supabase dashboard's SQL editor, run `supabase/migrations/0001_init.sql`
+followed by `supabase/seed.sql`. The seed creates a demo salon with four chairs,
+six services, and a login of `owner@demo.test` / `password123`.
+
+### Keys
+
+Supabase renamed its API keys. Newer projects issue `sb_publishable_…` and
+`sb_secret_…`; older ones issue anon and service_role JWTs. The app accepts
+either — see `.env.example`. Four variables are required, and the dashboard's
+connect snippet only gives you the first two:
+
+| Variable | Where it is used |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | everywhere |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | browser and staff pages, RLS-scoped |
+| `SUPABASE_SECRET_KEY` | tracking page and n8n routes — bypasses RLS, server only |
+| `N8N_API_SECRET` | bearer token the n8n hook routes require |
+
+Without `SUPABASE_SECRET_KEY` the staff app runs but `/t/<token>` and every
+`/api/hooks/*` route fail.
 
 ```bash
 npm test          # ETA engine unit tests

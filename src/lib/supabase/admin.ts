@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireSecretEnv } from './env'
 
 /**
  * Service-role client. Bypasses RLS entirely, so it is only for the public
@@ -6,9 +7,8 @@ import { createClient } from '@supabase/supabase-js'
  * (which are bearer-guarded). Never import this into a Client Component.
  */
 export function createAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  )
+  const { url, key } = requireSecretEnv()
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
 }
