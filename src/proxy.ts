@@ -9,7 +9,7 @@ import { requirePublicEnv } from './lib/supabase/env'
  * This refreshes the Supabase session cookie and does an optimistic redirect
  * for logged-out visitors. It is not the authorization boundary — RLS is.
  */
-const PUBLIC_PREFIXES = ['/login', '/t/', '/api/hooks/']
+const PUBLIC_PREFIXES = ['/login', '/t/', '/api/hooks/', '/supabase-check']
 
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next({ request })
